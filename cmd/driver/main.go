@@ -1,21 +1,22 @@
 package main
 
 import (
-	"github.com/mantra6g/iml/targets/bmv2/controllers/lease"
-	"github.com/mantra6g/iml/targets/bmv2/controllers/nf"
-	"github.com/mantra6g/iml/targets/bmv2/controllers/p4target"
-	"github.com/mantra6g/iml/targets/bmv2/handlers"
-	bmv2http "github.com/mantra6g/iml/targets/bmv2/http"
-	nfmgr "github.com/mantra6g/iml/targets/bmv2/managers/nf"
-	nfcfgmgr "github.com/mantra6g/iml/targets/bmv2/managers/nfcfg"
-	p4targetmgr "github.com/mantra6g/iml/targets/bmv2/managers/p4target"
-	p4switch "github.com/mantra6g/iml/targets/bmv2/pkg/p4switch"
 	"context"
 	"flag"
 	"fmt"
 	"net"
 	"os"
 	"time"
+
+	"github.com/mantra6g/bmv2-plugin/internal/controllers/lease"
+	"github.com/mantra6g/bmv2-plugin/internal/controllers/nf"
+	"github.com/mantra6g/bmv2-plugin/internal/controllers/p4target"
+	bmv2http "github.com/mantra6g/bmv2-plugin/internal/http"
+	"github.com/mantra6g/bmv2-plugin/internal/http/handlers"
+	nfmgr "github.com/mantra6g/bmv2-plugin/internal/managers/nf"
+	nfcfgmgr "github.com/mantra6g/bmv2-plugin/internal/managers/nfcfg"
+	p4targetmgr "github.com/mantra6g/bmv2-plugin/internal/managers/p4target"
+	p4switch "github.com/mantra6g/bmv2-plugin/pkg/p4switch"
 
 	"github.com/vishvananda/netlink"
 

@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"time"
 
-	oldproto "github.com/golang/protobuf/proto"
 	p4configv1 "github.com/p4lang/p4runtime/go/p4/config/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // Result holds the output of a successful P4 compilation.
@@ -87,7 +87,7 @@ func compileP4File(ctx context.Context, inputPath, outDir string) (*Result, erro
 	}
 
 	var p4info p4configv1.P4Info
-	if err := oldproto.Unmarshal(p4infoBytes, &p4info); err != nil {
+	if err := proto.Unmarshal(p4infoBytes, &p4info); err != nil {
 		return nil, fmt.Errorf("parsing p4info: %w", err)
 	}
 

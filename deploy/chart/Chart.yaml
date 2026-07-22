@@ -1,0 +1,14 @@
+apiVersion: v2
+name: iml-bmv2-plugin
+description: A Helm chart for the Behavioral Model v2 (BMv2) plugin for IML.
+type: application
+
+version: 0.0.1
+appVersion: "0.0.1"
+
+keywords:
+  - iml
+  - bmv2
+
+annotations:
+  kubebuilder.io/generated-by: kubebuilder
