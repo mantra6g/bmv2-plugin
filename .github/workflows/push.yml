@@ -1,0 +1,56 @@
+name: Push
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: push-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    uses: ./.github/workflows/build-test.yml
+
+  push-images:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push driver image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: driver
+          push: true
+          tags: ghcr.io/mantra6g/bmv2-driver:sha-${{ github.sha }}
+          cache-from: type=gha,scope=driver
+          cache-to: type=gha,mode=max,scope=driver
+
+      - name: Build & push operator image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: operator
+          push: true
+          tags: ghcr.io/mantra6g/bmv2-operator:sha-${{ github.sha }}
+          cache-from: type=gha,scope=operator
+          cache-to: type=gha,mode=max,scope=operator

@@ -1,5 +1,6 @@
-# Image URL to use all building/pushing image targets
-IMG ?= mantra6g/bmv2-driver:latest
+# Image URLs to use for all building/pushing image targets
+IMG_DRIVER ?= bmv2-driver:local
+IMG_OPERATOR ?= bmv2-operator:local
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -67,12 +68,15 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 ##@ Build
 
 .PHONY: build
-build: fmt vet ## Build driver binary.
-	go build -o bin/driver cmd/main.go
+build: build-driver build-operator ## Build driver and operator binaries.
 
-.PHONY: run
-run: fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go
+.PHONY: build-driver
+build-driver: fmt vet ## Build driver binary.
+	go build -o bin/driver ./cmd/driver
+
+.PHONY: build-operator
+build-operator: fmt vet ## Build operator binary.
+	go build -o bin/operator ./cmd/operator
 
 .PHONY: test
 test: fmt vet ## Run tests.
@@ -80,15 +84,16 @@ test: fmt vet ## Run tests.
 
 .PHONY: clean
 clean: ## Clean build artifacts and binaries.
-	rm -f bin/driver
+	rm -f bin/driver bin/operator
 	go clean
 
-# If you wish to build the driver image targeting other platforms you can use the --platform flag.
+# If you wish to build the images targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
-docker-build: ## Build docker image with the driver.
-	$(CONTAINER_TOOL) build -t ${IMG} --platform=linux/amd64 .
+docker-build: ## Build docker images for the driver and operator.
+	$(CONTAINER_TOOL) build -f Dockerfile --target driver -t ${IMG_DRIVER} --platform=linux/amd64 .
+	$(CONTAINER_TOOL) build -f Dockerfile --target operator -t ${IMG_OPERATOR} --platform=linux/amd64 .
 
 .PHONY: kind-create
 kind-create: ## Create a local kind cluster.
@@ -99,8 +104,9 @@ kind-delete: ## Delete the local kind cluster.
 	$(KIND) delete cluster --name $(KIND_CLUSTER)
 
 .PHONY: kind-load
-kind-load: ## Load the driver image into a kind cluster.
-	$(KIND) load docker-image ${IMG} --name $(KIND_CLUSTER)
+kind-load: ## Load the driver and operator images into a kind cluster.
+	$(KIND) load docker-image ${IMG_DRIVER} --name $(KIND_CLUSTER)
+	$(KIND) load docker-image ${IMG_OPERATOR} --name $(KIND_CLUSTER)
 
 .PHONY: test-up
 test-up: ## Deploy the BMv2 test pod.
@@ -151,35 +157,46 @@ port-forward-grafana: ## Port-forward Grafana UI to localhost:3000 (background).
 	$(KUBECTL) port-forward svc/grafana 3000:3000 &
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the driver.
-	$(CONTAINER_TOOL) push ${IMG}
+docker-push: ## Push docker images for the driver and operator.
+	$(CONTAINER_TOOL) push ${IMG_DRIVER}
+	$(CONTAINER_TOOL) push ${IMG_OPERATOR}
 
 .PHONY: docker-load
-docker-load: docker-build kind-load ## Build docker image and load into kind cluster.
+docker-load: docker-build kind-load ## Build docker images and load into kind cluster.
 
 .PHONY: docker-clean
-docker-clean: ## Remove docker image.
-	$(CONTAINER_TOOL) rmi ${IMG} || true
+docker-clean: ## Remove docker images.
+	$(CONTAINER_TOOL) rmi ${IMG_DRIVER} || true
+	$(CONTAINER_TOOL) rmi ${IMG_OPERATOR} || true
 
 .PHONY: test-restart
 test-restart: test-down docker-clean docker-build kind-load test-up ## Restart the test pod with a freshly built image.
 
-# PLATFORMS defines the target platforms for the driver image be built to provide support to multiple
-# architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
+# PLATFORMS defines the target platforms for the images to be built to provide support to multiple
+# architectures. (i.e. make docker-buildx IMG_DRIVER=myregistry/mydriver:0.0.1). To use this option you need to:
 # - be able to use docker buildx. More info: https://docs.docker.com/build/buildx/
 # - have enabled BuildKit. More info: https://docs.docker.com/develop/develop-images/build_enhancements/
-# - be able to push the image to your registry (i.e. if you do not set a valid value via IMG=<myregistry/image:<tag>> then the export will fail)
+# - be able to push the image to your registry (i.e. if you do not set a valid value via IMG_DRIVER/IMG_OPERATOR then the export will fail)
 # To adequately provide solutions that are compatible with multiple platforms, you should consider using this option.
 PLATFORMS ?= linux/arm64,linux/amd64
+
+# go-buildx-tool cross-builds and pushes a single image with buildx.
+# $1 - Dockerfile target stage (driver, operator)
+# $2 - image tag to push
+define go-buildx-tool
+# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into the .cross variant, preserving the original
+sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
+- $(CONTAINER_TOOL) buildx create --name bmv2-plugin-builder
+$(CONTAINER_TOOL) buildx use bmv2-plugin-builder
+- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --target $(1) --tag $(2) -f Dockerfile.cross .
+- $(CONTAINER_TOOL) buildx rm bmv2-plugin-builder
+rm Dockerfile.cross
+endef
+
 .PHONY: docker-buildx
-docker-buildx: ## Build and push docker image for the driver for cross-platform support
-	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
-	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
-	- $(CONTAINER_TOOL) buildx create --name bmv2-driver-builder
-	$(CONTAINER_TOOL) buildx use bmv2-driver-builder
-	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
-	- $(CONTAINER_TOOL) buildx rm bmv2-driver-builder
-	rm Dockerfile.cross
+docker-buildx: ## Build and push driver and operator images for cross-platform support.
+	$(call go-buildx-tool,driver,${IMG_DRIVER})
+	$(call go-buildx-tool,operator,${IMG_OPERATOR})
 
 ##@ P4 Programs
 

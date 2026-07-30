@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/build-test.yml
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "major_minor=${version%.*}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push driver image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: driver
+          push: true
+          tags: |
+            ghcr.io/mantra6g/bmv2-driver:${{ steps.version.outputs.version }}
+            ghcr.io/mantra6g/bmv2-driver:${{ steps.version.outputs.major_minor }}
+            ghcr.io/mantra6g/bmv2-driver:sha-${{ github.sha }}
+            ghcr.io/mantra6g/bmv2-driver:latest
+          cache-from: type=gha,scope=driver
+          cache-to: type=gha,mode=max,scope=driver
+
+      - name: Build & push operator image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: operator
+          push: true
+          tags: |
+            ghcr.io/mantra6g/bmv2-operator:${{ steps.version.outputs.version }}
+            ghcr.io/mantra6g/bmv2-operator:${{ steps.version.outputs.major_minor }}
+            ghcr.io/mantra6g/bmv2-operator:sha-${{ github.sha }}
+            ghcr.io/mantra6g/bmv2-operator:latest
+          cache-from: type=gha,scope=operator
+          cache-to: type=gha,mode=max,scope=operator
+
+      - name: Set chart version
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.version }}/" deploy/chart/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: \"${{ steps.version.outputs.version }}\"/" deploy/chart/Chart.yaml
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Package chart
+        run: helm package deploy/chart -d dist/chart
+
+      - name: Push chart to GHCR (OCI)
+        run: |
+          helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+          helm push dist/chart/iml-bmv2-plugin-${{ steps.version.outputs.version }}.tgz oci://ghcr.io/mantra6g/charts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/chart/*.tgz
