@@ -67,6 +67,10 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 
 ##@ Build
 
+.PHONY: generate
+generate: controller-gen ## Generate deepcopy methods for the CRs in pkg/api/v1alpha1.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/api/..."
+
 .PHONY: build
 build: build-driver build-operator ## Build driver and operator binaries.
 
@@ -248,14 +252,21 @@ $(LOCALBIN):
 KUBECTL ?= kubectl
 KIND ?= kind
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
+CONTROLLER_GEN = $(LOCALBIN)/controller-gen
 
 ## Tool Versions
 GOLANGCI_LINT_VERSION ?= v2.1.6
+CONTROLLER_TOOLS_VERSION ?= v0.16.5
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
