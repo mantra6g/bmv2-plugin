@@ -20,8 +20,8 @@ import (
 
 	"github.com/vishvananda/netlink"
 
+	apiv1alpha1 "github.com/mantra6g/bmv2-plugin/pkg/api/v1alpha1"
 	corev1alpha1 "github.com/mantra6g/iml/api/core/v1alpha1"
-	infrav1alpha1 "github.com/mantra6g/iml/api/infra/v1alpha1"
 	schedulingv1alpha1 "github.com/mantra6g/iml/api/scheduling/v1alpha1"
 	p4v1 "github.com/p4lang/p4runtime/go/p4/v1"
 	"google.golang.org/grpc"
@@ -53,7 +53,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme))
-	utilruntime.Must(infrav1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(schedulingv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }

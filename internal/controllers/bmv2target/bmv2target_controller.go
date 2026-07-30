@@ -21,10 +21,10 @@ import (
 	"fmt"
 
 	bmv2utils "github.com/mantra6g/bmv2-plugin/internal/controllers/bmv2target/util"
+	apiv1alpha1 "github.com/mantra6g/bmv2-plugin/pkg/api/v1alpha1"
 	p4targetutil "github.com/mantra6g/bmv2-plugin/pkg/p4targetutils"
 
 	corev1alpha1 "github.com/mantra6g/iml/api/core/v1alpha1"
-	infrav1alpha1 "github.com/mantra6g/iml/api/infra/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,9 +45,9 @@ type Reconciler struct {
 	Config *bmv2utils.BMv2Config
 }
 
-// +kubebuilder:rbac:groups=infra.loom.io,resources=bmv2targets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=infra.loom.io,resources=bmv2targets/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=infra.loom.io,resources=bmv2targets/finalizers,verbs=update
+// +kubebuilder:rbac:groups=plugins.loom.io,resources=bmv2targets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=plugins.loom.io,resources=bmv2targets/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=plugins.loom.io,resources=bmv2targets/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core.loom.io,resources=p4targets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
@@ -61,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	logger := logf.FromContext(ctx)
 	logger.V(1).Info("Reconciling BMv2Target")
 
-	bmv2Target := &infrav1alpha1.BMv2Target{}
+	bmv2Target := &apiv1alpha1.BMv2Target{}
 	err := r.Get(ctx, req.NamespacedName, bmv2Target)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -107,7 +107,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrav1alpha1.BMv2Target{}).
+		For(&apiv1alpha1.BMv2Target{}).
 		Owns(&corev1alpha1.P4Target{}).
 		Owns(&appsv1.Deployment{},
 			builder.WithPredicates(predicate.GenerationChangedPredicate{})).
@@ -116,7 +116,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *Reconciler) ensureP4Target(
-	ctx context.Context, bmv2tgt *infrav1alpha1.BMv2Target) (*corev1alpha1.P4Target, error) {
+	ctx context.Context, bmv2tgt *apiv1alpha1.BMv2Target) (*corev1alpha1.P4Target, error) {
 	p4target := &corev1alpha1.P4Target{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: bmv2tgt.Name,
@@ -134,7 +134,7 @@ func (r *Reconciler) ensureP4Target(
 }
 
 func (r *Reconciler) ensureDeployment(ctx context.Context,
-	target *infrav1alpha1.BMv2Target) (*appsv1.Deployment, error) {
+	target *apiv1alpha1.BMv2Target) (*appsv1.Deployment, error) {
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      target.Name,
@@ -153,7 +153,7 @@ func (r *Reconciler) ensureDeployment(ctx context.Context,
 }
 
 func (r *Reconciler) updateStatus(
-	ctx context.Context, bmv2Target *infrav1alpha1.BMv2Target,
+	ctx context.Context, bmv2Target *apiv1alpha1.BMv2Target,
 	p4target *corev1alpha1.P4Target, dep *appsv1.Deployment) error {
 	newStatus := calculateStatus(bmv2Target, p4target, dep)
 
@@ -163,11 +163,11 @@ func (r *Reconciler) updateStatus(
 	return r.Status().Patch(ctx, bmv2Target, client.MergeFrom(original))
 }
 
-func calculateStatus(bmv2Target *infrav1alpha1.BMv2Target,
-	p4target *corev1alpha1.P4Target, dep *appsv1.Deployment) *infrav1alpha1.BMv2TargetStatus {
-	status := &infrav1alpha1.BMv2TargetStatus{
+func calculateStatus(bmv2Target *apiv1alpha1.BMv2Target,
+	p4target *corev1alpha1.P4Target, dep *appsv1.Deployment) *apiv1alpha1.BMv2TargetStatus {
+	status := &apiv1alpha1.BMv2TargetStatus{
 		ObservedGeneration: bmv2Target.Generation,
-		Conditions:         make([]infrav1alpha1.BMv2TargetCondition, 0, len(bmv2Target.Status.Conditions)),
+		Conditions:         make([]apiv1alpha1.BMv2TargetCondition, 0, len(bmv2Target.Status.Conditions)),
 	}
 	// Copy conditions from old status
 	for i := range bmv2Target.Status.Conditions {

@@ -7,9 +7,9 @@ metadata:
     "helm.sh/resource-policy": keep
     {{- end }}
     controller-gen.kubebuilder.io/version: v0.18.0
-  name: bmv2targets.infra.loom.io
+  name: bmv2targets.plugins.loom.io
 spec:
-  group: infra.loom.io
+  group: plugins.loom.io
   names:
     kind: BMv2Target
     listKind: BMv2TargetList

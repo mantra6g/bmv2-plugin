@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	apiv1alpha1 "github.com/mantra6g/bmv2-plugin/pkg/api/v1alpha1"
 	corev1alpha1 "github.com/mantra6g/iml/api/core/v1alpha1"
-	infrav1alpha1 "github.com/mantra6g/iml/api/infra/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +70,7 @@ func ParseBMv2ConfigFromPath(path string) (*BMv2Config, error) {
 	}, nil
 }
 
-func EnsureBMv2DataPlaneContainer(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2DataPlaneContainer(bmv2Target *apiv1alpha1.BMv2Target,
 	containers []corev1.Container, cfg *BMv2Config) []corev1.Container {
 	if containers == nil {
 		containers = []corev1.Container{}
@@ -110,7 +110,7 @@ func EnsureBMv2DataPlaneContainer(bmv2Target *infrav1alpha1.BMv2Target,
 	return containers
 }
 
-func EnsureBMv2DriverContainer(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2DriverContainer(bmv2Target *apiv1alpha1.BMv2Target,
 	containers []corev1.Container, cfg *BMv2Config) []corev1.Container {
 	if containers == nil {
 		containers = []corev1.Container{}
@@ -145,7 +145,7 @@ func EnsureBMv2DriverContainer(bmv2Target *infrav1alpha1.BMv2Target,
 	return containers
 }
 
-func EnsureDriverEnvVars(bmv2Target *infrav1alpha1.BMv2Target, existing []corev1.EnvVar) []corev1.EnvVar {
+func EnsureDriverEnvVars(bmv2Target *apiv1alpha1.BMv2Target, existing []corev1.EnvVar) []corev1.EnvVar {
 	if existing == nil {
 		existing = []corev1.EnvVar{}
 	}
@@ -212,7 +212,7 @@ func EnsurePodNamespaceEnvVar(existing []corev1.EnvVar) []corev1.EnvVar {
 	return existing
 }
 
-func EnsureBMv2DeploymentSpec(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2DeploymentSpec(bmv2Target *apiv1alpha1.BMv2Target,
 	spec *appsv1.DeploymentSpec, cfg *BMv2Config) *appsv1.DeploymentSpec {
 	if spec == nil {
 		spec = &appsv1.DeploymentSpec{}
@@ -228,7 +228,7 @@ func EnsureBMv2DeploymentSpec(bmv2Target *infrav1alpha1.BMv2Target,
 	return spec
 }
 
-func EnsureBMv2PodMeta(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2PodMeta(bmv2Target *apiv1alpha1.BMv2Target,
 	meta *metav1.ObjectMeta) *metav1.ObjectMeta {
 	if meta == nil {
 		meta = &metav1.ObjectMeta{}
@@ -238,7 +238,7 @@ func EnsureBMv2PodMeta(bmv2Target *infrav1alpha1.BMv2Target,
 	return meta
 }
 
-func EnsureBMv2PodSpec(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2PodSpec(bmv2Target *apiv1alpha1.BMv2Target,
 	spec *corev1.PodSpec, cfg *BMv2Config) *corev1.PodSpec {
 	if spec == nil {
 		spec = &corev1.PodSpec{}
@@ -252,16 +252,16 @@ func EnsureBMv2PodSpec(bmv2Target *infrav1alpha1.BMv2Target,
 	return spec
 }
 
-func EnsureBMv2DeploymentLabels(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2DeploymentLabels(bmv2Target *apiv1alpha1.BMv2Target,
 	labels map[string]string) map[string]string {
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	labels[infrav1alpha1.BMv2TargetLabel] = bmv2Target.Name
+	labels[apiv1alpha1.BMv2TargetLabel] = bmv2Target.Name
 	return labels
 }
 
-func EnsureBMv2DeploymentAnnotations(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2DeploymentAnnotations(bmv2Target *apiv1alpha1.BMv2Target,
 	annotations map[string]string) map[string]string {
 	if annotations == nil {
 		annotations = make(map[string]string)
@@ -269,7 +269,7 @@ func EnsureBMv2DeploymentAnnotations(bmv2Target *infrav1alpha1.BMv2Target,
 	return annotations
 }
 
-func EnsureBMv2DeploymentFinalizers(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureBMv2DeploymentFinalizers(bmv2Target *apiv1alpha1.BMv2Target,
 	finalizers []string) []string {
 	return finalizers
 }
@@ -291,7 +291,7 @@ func (c CNIConfig) String() string {
 	return string(data)
 }
 
-func NewCNIConfigForTarget(bmv2Target *infrav1alpha1.BMv2Target) CNIConfig {
+func NewCNIConfigForTarget(bmv2Target *apiv1alpha1.BMv2Target) CNIConfig {
 	return CNIConfig{
 		Name:      "loom-cni",
 		Namespace: "loom-system",
@@ -303,28 +303,28 @@ func NewCNIConfigForTarget(bmv2Target *infrav1alpha1.BMv2Target) CNIConfig {
 	}
 }
 
-func GetBMv2PodTemplateAnnotations(bmv2Target *infrav1alpha1.BMv2Target) map[string]string {
+func GetBMv2PodTemplateAnnotations(bmv2Target *apiv1alpha1.BMv2Target) map[string]string {
 	return map[string]string{
 		"k8s.v1.cni.cncf.io/networks": "[" + NewCNIConfigForTarget(bmv2Target).String() + "]",
 	}
 }
 
-func GetBMv2PodTemplateLabels(bmv2Target *infrav1alpha1.BMv2Target) map[string]string {
+func GetBMv2PodTemplateLabels(bmv2Target *apiv1alpha1.BMv2Target) map[string]string {
 	return map[string]string{
-		infrav1alpha1.BMv2TargetLabel: bmv2Target.Name,
+		apiv1alpha1.BMv2TargetLabel: bmv2Target.Name,
 	}
 }
 
-func EnsureP4TargetLabels(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureP4TargetLabels(bmv2Target *apiv1alpha1.BMv2Target,
 	labels map[string]string) map[string]string {
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	labels[infrav1alpha1.BMv2TargetLabel] = bmv2Target.Name
+	labels[apiv1alpha1.BMv2TargetLabel] = bmv2Target.Name
 	return labels
 }
 
-func EnsureP4TargetAnnotations(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureP4TargetAnnotations(bmv2Target *apiv1alpha1.BMv2Target,
 	annotations map[string]string) map[string]string {
 	if annotations == nil {
 		annotations = make(map[string]string)
@@ -332,12 +332,12 @@ func EnsureP4TargetAnnotations(bmv2Target *infrav1alpha1.BMv2Target,
 	return annotations
 }
 
-func EnsureP4TargetFinalizers(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureP4TargetFinalizers(bmv2Target *apiv1alpha1.BMv2Target,
 	finalizers []string) []string {
 	return finalizers
 }
 
-func EnsureP4TargetSpec(bmv2Target *infrav1alpha1.BMv2Target,
+func EnsureP4TargetSpec(bmv2Target *apiv1alpha1.BMv2Target,
 	spec *corev1alpha1.P4TargetSpec) *corev1alpha1.P4TargetSpec {
 	if spec == nil {
 		spec = &corev1alpha1.P4TargetSpec{}
@@ -345,17 +345,17 @@ func EnsureP4TargetSpec(bmv2Target *infrav1alpha1.BMv2Target,
 	return spec
 }
 
-func NewReadyCondition(status metav1.ConditionStatus, reason, message string) infrav1alpha1.BMv2TargetCondition {
-	return NewBMv2TargetCondition(infrav1alpha1.BMv2TargetConditionReady, status, reason, message)
+func NewReadyCondition(status metav1.ConditionStatus, reason, message string) apiv1alpha1.BMv2TargetCondition {
+	return NewBMv2TargetCondition(apiv1alpha1.BMv2TargetConditionReady, status, reason, message)
 }
 
-func RemoveReadyCondition(bmv2Target *infrav1alpha1.BMv2Target) []infrav1alpha1.BMv2TargetCondition {
-	return RemoveBMv2TargetCondition(bmv2Target, infrav1alpha1.BMv2TargetConditionReady)
+func RemoveReadyCondition(bmv2Target *apiv1alpha1.BMv2Target) []apiv1alpha1.BMv2TargetCondition {
+	return RemoveBMv2TargetCondition(bmv2Target, apiv1alpha1.BMv2TargetConditionReady)
 }
 
-func NewBMv2TargetCondition(conditionType infrav1alpha1.BMv2TargetConditionType,
-	status metav1.ConditionStatus, reason, message string) infrav1alpha1.BMv2TargetCondition {
-	return infrav1alpha1.BMv2TargetCondition{
+func NewBMv2TargetCondition(conditionType apiv1alpha1.BMv2TargetConditionType,
+	status metav1.ConditionStatus, reason, message string) apiv1alpha1.BMv2TargetCondition {
+	return apiv1alpha1.BMv2TargetCondition{
 		Type:               conditionType,
 		Status:             status,
 		LastTransitionTime: metav1.Now(),
@@ -364,8 +364,8 @@ func NewBMv2TargetCondition(conditionType infrav1alpha1.BMv2TargetConditionType,
 	}
 }
 
-func GetBMv2TargetCondition(bmv2Target *infrav1alpha1.BMv2Target,
-	conditionType infrav1alpha1.BMv2TargetConditionType) *infrav1alpha1.BMv2TargetCondition {
+func GetBMv2TargetCondition(bmv2Target *apiv1alpha1.BMv2Target,
+	conditionType apiv1alpha1.BMv2TargetConditionType) *apiv1alpha1.BMv2TargetCondition {
 	for i := range bmv2Target.Status.Conditions {
 		if bmv2Target.Status.Conditions[i].Type == conditionType {
 			return &bmv2Target.Status.Conditions[i]
@@ -374,18 +374,18 @@ func GetBMv2TargetCondition(bmv2Target *infrav1alpha1.BMv2Target,
 	return nil
 }
 
-func CopyBMv2TargetConditions(bmv2Target *infrav1alpha1.BMv2Target) []infrav1alpha1.BMv2TargetCondition {
+func CopyBMv2TargetConditions(bmv2Target *apiv1alpha1.BMv2Target) []apiv1alpha1.BMv2TargetCondition {
 	conditions := bmv2Target.Status.Conditions
 
-	newConditions := make([]infrav1alpha1.BMv2TargetCondition, len(conditions))
+	newConditions := make([]apiv1alpha1.BMv2TargetCondition, len(conditions))
 	copy(newConditions, conditions)
 
 	return newConditions
 }
 
-func RemoveBMv2TargetCondition(bmv2Target *infrav1alpha1.BMv2Target,
-	conditionType infrav1alpha1.BMv2TargetConditionType) []infrav1alpha1.BMv2TargetCondition {
-	newConditions := make([]infrav1alpha1.BMv2TargetCondition, 0)
+func RemoveBMv2TargetCondition(bmv2Target *apiv1alpha1.BMv2Target,
+	conditionType apiv1alpha1.BMv2TargetConditionType) []apiv1alpha1.BMv2TargetCondition {
+	newConditions := make([]apiv1alpha1.BMv2TargetCondition, 0)
 	for _, cond := range bmv2Target.Status.Conditions {
 		if cond.Type != conditionType {
 			newConditions = append(newConditions, cond)
@@ -394,8 +394,8 @@ func RemoveBMv2TargetCondition(bmv2Target *infrav1alpha1.BMv2Target,
 	return newConditions
 }
 
-func UpdateBMv2TargetCondition(bmv2Target *infrav1alpha1.BMv2Target,
-	newCondition infrav1alpha1.BMv2TargetCondition) []infrav1alpha1.BMv2TargetCondition {
+func UpdateBMv2TargetCondition(bmv2Target *apiv1alpha1.BMv2Target,
+	newCondition apiv1alpha1.BMv2TargetCondition) []apiv1alpha1.BMv2TargetCondition {
 	existingCondition := GetBMv2TargetCondition(bmv2Target, newCondition.Type)
 	if existingCondition != nil && existingCondition.Status == newCondition.Status {
 		return CopyBMv2TargetConditions(bmv2Target) // If the status hasn't changed, we don't need to update the LastTransitionTime

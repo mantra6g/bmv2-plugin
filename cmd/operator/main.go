@@ -40,8 +40,8 @@ import (
 
 	"github.com/mantra6g/bmv2-plugin/internal/controllers/bmv2target"
 
+	apiv1alpha1 "github.com/mantra6g/bmv2-plugin/pkg/api/v1alpha1"
 	corev1alpha1 "github.com/mantra6g/iml/api/core/v1alpha1"
-	infrav1alpha1 "github.com/mantra6g/iml/api/infra/v1alpha1"
 	schedulingv1alpha1 "github.com/mantra6g/iml/api/scheduling/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -59,7 +59,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme))
-	utilruntime.Must(infrav1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(schedulingv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }

@@ -32,8 +32,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	apiv1alpha1 "github.com/mantra6g/bmv2-plugin/pkg/api/v1alpha1"
 	corev1alpha1 "github.com/mantra6g/iml/api/core/v1alpha1"
-	infrav1alpha1 "github.com/mantra6g/iml/api/infra/v1alpha1"
 	schedulingv1alpha1 "github.com/mantra6g/iml/api/scheduling/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -61,7 +61,7 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	var err error
-	err = infrav1alpha1.AddToScheme(scheme.Scheme)
+	err = apiv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = corev1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
